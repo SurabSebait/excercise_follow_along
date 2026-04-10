@@ -1,8 +1,12 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import base64
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
+
+
+mp_draw = mp.solutions.drawing_utils
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
@@ -86,6 +90,13 @@ def background_process():
             if results.pose_landmarks:
                 lm = results.pose_landmarks.landmark
                 exercise = state["current_exercise"]
+                mp_draw.draw_landmarks(
+                frame, 
+                results.pose_landmarks, 
+                mp_pose.POSE_CONNECTIONS,
+                mp_draw.DrawingSpec(color=(245,117,66), thickness=2, circle_radius=2),
+                mp_draw.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2)
+                )
 
                 # Guard: skip if exercise config not found
                 if exercise not in EXERCISE_CONFIG:
@@ -117,6 +128,12 @@ def background_process():
                     'stage': state["stage"],
                     'exercise': exercise
                 })
+
+            small_frame = cv2.resize(frame, (640, 480)) 
+            _, buffer = cv2.imencode('.jpg', small_frame)
+            frame_encoded = base64.b64encode(buffer).decode('utf-8')
+
+            socketio.emit('video_frame', {'image': frame_encoded})
 
         except Exception as e:
             print(f"Frame processing error: {e}")
