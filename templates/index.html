@@ -6,99 +6,121 @@
         * { box-sizing: border-box; }
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #111; }
 
+        /* Hidden video — just a source, not displayed directly */
+        #bgVideo {
+            position: absolute; top: -9999px; left: -9999px;
+            width: 1px; height: 1px;
+        }
+
+        /* Main canvas: mirrored webcam + skeleton drawn together */
+        #mainCanvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* HUD card — top left */
         #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            color: white;
-            pointer-events: none;
+            position: absolute; top: 20px; left: 20px;
+            z-index: 100; color: white; pointer-events: none;
         }
-
         .data-card {
-            background: rgba(0, 0, 0, 0.65);
-            padding: 20px 28px;
-            border-radius: 12px;
+            background: rgba(0,0,0,0.65);
+            padding: 20px 28px; border-radius: 12px;
             border: 1px solid #00ff88;
-            backdrop-filter: blur(6px);
-            min-width: 220px;
+            backdrop-filter: blur(6px); min-width: 220px;
         }
-
         .data-card h2 {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #00ff88;
+            margin: 0 0 8px 0; font-size: 16px;
+            letter-spacing: 2px; text-transform: uppercase; color: #00ff88;
+        }
+        .rep-display { font-size: 56px; font-weight: 900; margin: 4px 0; line-height: 1; }
+        .angle-display { font-size: 13px; color: #aaa; margin-top: 6px; }
+        #feedback { margin-top: 10px; font-size: 15px; font-weight: 600; color: #00ff88; letter-spacing: 1px; }
+
+        /* Detection badge */
+        #detectBadge {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 100; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+            padding: 5px 14px; border-radius: 20px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            border: 1px solid #555; color: #aaa; transition: all 0.3s;
+        }
+        #detectBadge.ok   { border-color: #00ff88; color: #00ff88; }
+        #detectBadge.fail { border-color: #ff4444; color: #ff4444; }
+
+        /* Trainer video — top right */
+        #trainerWrap {
+            position: absolute; top: 16px; right: 16px;
+            z-index: 200; width: 480px; height: 400px;
+            border-radius: 14px; border: 1.5px solid #00ff88;
+            background: #000; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,255,136,0.3);
+        }
+        #trainerVideo { width: 100%; height: 100%; object-fit: cover; display: block; }
+        #trainerLabel {
+            position: absolute; bottom: 8px; left: 0; right: 0;
+            text-align: center; font-size: 11px; letter-spacing: 2px;
+            text-transform: uppercase; color: #00ff88cc;
+            pointer-events: none; text-shadow: 0 1px 4px #000;
+        }
+        #trainerIcon {
+            position: absolute; top: 8px; left: 10px;
+            font-size: 10px; color: #00ff88; letter-spacing: 1px; text-transform: uppercase;
+            background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px;
         }
 
-        .rep-display {
-            font-size: 56px;
-            font-weight: 900;
-            margin: 4px 0;
-            line-height: 1;
+        /* Camera permission overlay */
+        #camOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 300; background: rgba(0,0,0,0.92);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: white; text-align: center; gap: 16px;
         }
-
-        .angle-display {
-            font-size: 13px;
-            color: #aaa;
-            margin-top: 6px;
+        #camOverlay h2 { font-size: 24px; color: #00ff88; margin: 0; }
+        #camOverlay p  { font-size: 14px; color: #aaa; max-width: 360px; margin: 0; }
+        #allowBtn {
+            padding: 14px 32px; border-radius: 10px; border: none;
+            background: #00c870; color: #000; font-weight: 800;
+            font-size: 16px; cursor: pointer; letter-spacing: 1px;
         }
+        #allowBtn:hover { background: #00ff88; }
+        #camOverlay.hidden { display: none; }
+        #camError { color: #ff6666; font-size: 12px; display: none; }
 
-        #feedback {
-            margin-top: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            color: #00ff88;
-            letter-spacing: 1px;
-        }
-
+        /* Bottom controls */
         .controls {
-            position: absolute;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            display: flex;
-            gap: 12px;
+            position: absolute; bottom: 28px; left: 50%;
+            transform: translateX(-50%); z-index: 100; display: flex; gap: 12px;
         }
-
         .controls button {
-            padding: 12px 24px;
-            cursor: pointer;
-            border-radius: 8px;
+            padding: 12px 24px; cursor: pointer; border-radius: 8px;
             border: 2px solid transparent;
-            background: rgba(0, 100, 255, 0.75);
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: background 0.2s, border-color 0.2s;
-            backdrop-filter: blur(4px);
+            background: rgba(0,100,255,0.75); color: white;
+            font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+            transition: background 0.2s, border-color 0.2s; backdrop-filter: blur(4px);
         }
-
         .controls button:hover,
-        .controls button.active {
-            background: rgba(0, 200, 120, 0.85);
-            border-color: #00ff88;
-        }
+        .controls button.active { background: rgba(0,200,120,0.85); border-color: #00ff88; }
 
-        #loading-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 200;
-            color: #aaa;
-            font-size: 12px;
-            background: rgba(0,0,0,0.5);
-            padding: 6px 12px;
-            border-radius: 6px;
+        /* Status badge bottom-right */
+        #sourceBadge {
+            position: absolute; bottom: 28px; right: 16px; z-index: 100;
+            font-size: 11px; color: #555;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 6px;
         }
     </style>
 </head>
 <body>
 
+<!-- Hidden video: raw webcam source (not displayed, painted onto canvas) -->
+<video id="bgVideo" autoplay muted playsinline></video>
+
+<!-- Main display: mirrored camera + skeleton -->
+<canvas id="mainCanvas"></canvas>
+
+<!-- HUD -->
 <div id="ui">
     <div class="data-card">
         <h2 id="exName">Bicep Curl</h2>
@@ -108,191 +130,272 @@
     </div>
 </div>
 
-<div id="loading-overlay" id="modelStatus">Loading models…</div>
+<!-- Detection badge -->
+<div id="detectBadge">Connecting…</div>
 
-<div class="controls">
-    <button id="btn-bicep_curl" class="active" onclick="setEx('bicep_curl')">Curls</button>
-    <button id="btn-squat" onclick="setEx('squat')">Squats</button>
-    <button id="btn-pushup" onclick="setEx('pushup')">Push-Ups</button>
+<!-- Trainer video top-right -->
+<div id="trainerWrap">
+    <video id="trainerVideo" autoplay muted playsinline loop></video>
+    <div id="trainerIcon">🎬 TRAINER</div>
+    <div id="trainerLabel">Bicep Curl</div>
 </div>
 
-<!-- Hidden video used as AR background texture -->
-<video id="videoBG" src="/static/pushup.mp4" loop muted playsinline style="display:none;"></video>
+<!-- Source badge -->
+<div id="sourceBadge">camera: —</div>
 
-<!-- Three.js r128 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- GLTFLoader compatible with r128 from unpkg -->
-<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<!-- Socket.IO -->
+<!-- Camera permission overlay -->
+<div id="camOverlay">
+    <h2>📷 Camera Access Needed</h2>
+    <p>Your webcam is used locally to track pose and count reps. No video is stored.</p>
+    <button id="allowBtn" onclick="requestCamera()">Enable Camera</button>
+    <p id="camError"></p>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+    <button id="btn-bicep_curl" class="active" onclick="setEx('bicep_curl')">Curls</button>
+    <button id="btn-squat"                     onclick="setEx('squat')">Squats</button>
+    <button id="btn-pushup"                    onclick="setEx('pushup')">Push-Ups</button>
+</div>
+
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
 <script>
-    // ─── Socket.IO ────────────────────────────────────────────────────────────
-    const socket = io();
+// ═══════════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════════
+const EXERCISE_LABELS = { bicep_curl: 'Bicep Curl', squat: 'Squat', pushup: 'Push-Up' };
+const exerciseNames   = ['bicep_curl', 'squat', 'pushup'];
+const EXERCISE_VIDEOS = {
+    bicep_curl: '/static/bicep_curl.mp4',
+    squat:      '/static/squat.mp4',
+    pushup:     '/static/pushup.mp4',
+};
+const POSE_CONNECTIONS = [
+    [0,1],[1,2],[2,3],[3,7],[0,4],[4,5],[5,6],[6,8],[9,10],
+    [11,12],[11,23],[12,24],[23,24],
+    [11,13],[13,15],[15,17],[15,19],[15,21],[17,19],
+    [12,14],[14,16],[16,18],[16,20],[16,22],[18,20],
+    [23,25],[25,27],[27,29],[27,31],[29,31],
+    [24,26],[26,28],[28,30],[28,32],[30,32]
+];
 
-    // ─── Video background ─────────────────────────────────────────────────────
-    const video = document.getElementById('videoBG');
-    video.play().catch(e => console.warn('Video autoplay blocked:', e));
+// ═══════════════════════════════════════════════════════════════════
+//  ELEMENTS
+// ═══════════════════════════════════════════════════════════════════
+const bgVideo      = document.getElementById('bgVideo');
+const mainCanvas   = document.getElementById('mainCanvas');
+const ctx          = mainCanvas.getContext('2d');
+const trainerVideo = document.getElementById('trainerVideo');
+const trainerLabel = document.getElementById('trainerLabel');
+const sourceBadge  = document.getElementById('sourceBadge');
+const camOverlay   = document.getElementById('camOverlay');
+const camError     = document.getElementById('camError');
+const detectBadge  = document.getElementById('detectBadge');
 
-    // ─── Three.js Scene Setup ─────────────────────────────────────────────────
-    const scene    = new THREE.Scene();
-    const camera   = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5);   // Pull camera back so models are visible
+let currentExercise = 'bicep_curl';
+let latestLandmarks = [];
+let camReady        = false;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    document.body.appendChild(renderer.domElement);
+// Canvas resize
+function resizeCanvas() {
+    mainCanvas.width  = window.innerWidth;
+    mainCanvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-    // ─── Video Background Texture ─────────────────────────────────────────────
-    const videoTexture = new THREE.VideoTexture(video);
-    scene.background = videoTexture;
+// ═══════════════════════════════════════════════════════════════════
+//  OFFSCREEN CAPTURE CANVAS (320×180, sent to server)
+// ═══════════════════════════════════════════════════════════════════
+const captureCanvas = document.createElement('canvas');
+captureCanvas.width  = 320;
+captureCanvas.height = 180;
+const capCtx = captureCanvas.getContext('2d');
 
-    // ─── Lighting ─────────────────────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    dirLight.position.set(2, 4, 3);
-    scene.add(dirLight);
-
-    // ─── Load 3D Models ───────────────────────────────────────────────────────
-    const loader = new THREE.GLTFLoader();
-    const models = {};        // keyed by exercise name
-    const mixers = {};        // AnimationMixers if models have animations
-    const exerciseNames = ['bicep_curl', 'squat', 'pushup'];
-    let loadedCount = 0;
-
-    const loadingEl = document.getElementById('loading-overlay');
-
-    exerciseNames.forEach(name => {
-        loader.load(
-            `/static/models/${name}.glb`,
-            (gltf) => {
-                const model = gltf.scene;
-                model.scale.set(1.5, 1.5, 1.5);
-                model.position.set(1.5, -1.5, -4);
-
-                // Only show the default exercise on load
-                model.visible = (name === 'bicep_curl');
-
-                scene.add(model);
-                models[name] = model;
-
-                // Set up animation mixer if the model has animations
-                if (gltf.animations && gltf.animations.length > 0) {
-                    const mixer = new THREE.AnimationMixer(model);
-                    mixers[name] = mixer;
-                    // Optionally play the first clip:
-                    // mixer.clipAction(gltf.animations[0]).play();
-                }
-
-                loadedCount++;
-                if (loadedCount === exerciseNames.length) {
-                    loadingEl.style.display = 'none';
-                }
-            },
-            undefined,
-            (err) => {
-                console.warn(`Model "${name}.glb" failed to load:`, err);
-                loadedCount++;
-                if (loadedCount === exerciseNames.length) {
-                    loadingEl.textContent = 'Some models missing';
-                    setTimeout(() => { loadingEl.style.display = 'none'; }, 3000);
-                }
-            }
-        );
-    });
-
-    // ─── Exercise Selection ───────────────────────────────────────────────────
-    function setEx(name) {
-        socket.emit('set_exercise', { name });
-
-        // Update button styles
-        exerciseNames.forEach(n => {
-            const btn = document.getElementById('btn-' + n);
-            if (btn) btn.classList.toggle('active', n === name);
+// ═══════════════════════════════════════════════════════════════════
+//  WEBCAM
+// ═══════════════════════════════════════════════════════════════════
+async function requestCamera() {
+    camError.style.display = 'none';
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+            audio: false
         });
+        bgVideo.srcObject = stream;
 
-        // Update display name
-        const labels = { bicep_curl: 'Bicep Curl', squat: 'Squat', pushup: 'Push-Up' };
-        document.getElementById('exName').textContent = labels[name] || name;
-
-        // Show/hide models
-        exerciseNames.forEach(n => {
-            if (models[n]) models[n].visible = (n === name);
+        await new Promise((resolve, reject) => {
+            bgVideo.onloadedmetadata = resolve;
+            bgVideo.onerror          = reject;
+            setTimeout(reject, 8000);
         });
+        await bgVideo.play();
+
+        camReady = true;
+        camOverlay.classList.add('hidden');
+        sourceBadge.textContent = '📷 Camera live';
+        sourceBadge.style.color = '#00ff88';
+
+        renderLoop();       // start drawing mirrored video + skeleton
+        startFrameSender(); // start sending frames to server
+
+    } catch (err) {
+        let msg = 'Camera access denied or unavailable.';
+        if (err.name === 'NotAllowedError')  msg = 'Permission denied — allow camera access in your browser settings.';
+        if (err.name === 'NotFoundError')    msg = 'No camera found on this device.';
+        if (err.name === 'NotReadableError') msg = 'Camera is in use by another app.';
+        camError.textContent   = msg;
+        camError.style.display = 'block';
+        console.error('Camera error:', err);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    requestCamera().catch(() => {});
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  RENDER LOOP — mirrors webcam + draws skeleton on mainCanvas
+// ═══════════════════════════════════════════════════════════════════
+function renderLoop() {
+    const W = mainCanvas.width;
+    const H = mainCanvas.height;
+
+    // Mirror-draw the raw video (CSS-free mirroring via canvas transform)
+    ctx.save();
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(bgVideo, 0, 0, W, H);
+    ctx.restore();
+
+    // Overlay skeleton
+    if (latestLandmarks.length) drawSkeleton(latestLandmarks, W, H);
+
+    requestAnimationFrame(renderLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FRAME SENDER — ~15 fps to server
+// ═══════════════════════════════════════════════════════════════════
+let sendingFrame = false;
+
+function startFrameSender() {
+    setInterval(() => {
+        if (!camReady || !socket.connected || sendingFrame) return;
+        if (bgVideo.readyState < 2) return;
+
+        sendingFrame = true;
+
+        // Draw RAW (un-mirrored) frame — server flips it before MediaPipe
+        capCtx.drawImage(bgVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+        const frameB64 = captureCanvas.toDataURL('image/jpeg', 0.6);
+
+        // Emit; use timeout as fallback since ack may not fire in all SocketIO versions
+        socket.emit('frame', { image: frameB64 });
+        setTimeout(() => { sendingFrame = false; }, 150);
+
+    }, 66); // ~15 fps
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SKELETON
+// ═══════════════════════════════════════════════════════════════════
+function drawSkeleton(landmarks, W, H) {
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur  = 10;
+    ctx.strokeStyle = 'rgba(0,255,136,0.85)';
+    ctx.lineWidth   = 2.5;
+
+    for (const [i, j] of POSE_CONNECTIONS) {
+        const a = landmarks[i], b = landmarks[j];
+        if (!a || !b || a.visibility < 0.4 || b.visibility < 0.4) continue;
+        ctx.beginPath();
+        ctx.moveTo(a.x * W, a.y * H);
+        ctx.lineTo(b.x * W, b.y * H);
+        ctx.stroke();
     }
 
-    // ─── Socket Data Updates ──────────────────────────────────────────────────
-    socket.on('data_update', (data) => {
-        document.getElementById('repCount').textContent = data.reps;
-        document.getElementById('angleVal').textContent = data.angle;
+    for (const lm of landmarks) {
+        if (lm.visibility < 0.4) continue;
 
-        const feedbackEl = document.getElementById('feedback');
-        if (data.stage === 'down') {
-            feedbackEl.textContent = '⬆ PUSH / PULL UP';
-            feedbackEl.style.color = '#ffdd00';
-        } else if (data.stage === 'up') {
-            feedbackEl.textContent = '⬇ LOWER DOWN';
-            feedbackEl.style.color = '#00ff88';
-        } else {
-            feedbackEl.textContent = 'Get Ready!';
-            feedbackEl.style.color = '#aaa';
-        }
+        ctx.beginPath();
+        ctx.arc(lm.x * W, lm.y * H, 6, 0, Math.PI * 2);
+        ctx.fillStyle  = 'rgba(0,255,136,0.2)';
+        ctx.shadowBlur = 16;
+        ctx.fill();
 
-        // Sync bone rotation to joint angle (angle already in degrees, convert to radians)
-        const model = models[data.exercise];
-        if (model) {
-            const angleRad = (data.angle * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.arc(lm.x * W, lm.y * H, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle  = '#ffffff';
+        ctx.shadowBlur = 8;
+        ctx.fill();
 
-            // Try common Mixamo bone names — adjust to match your actual .glb rig
-            const boneNames = [
-                'mixamorigLeftForeArm',
-                'mixamorigLeftForearm',
-                'LeftForeArm',
-                'left_forearm'
-            ];
-            for (const boneName of boneNames) {
-                const bone = model.getObjectByName(boneName);
-                if (bone) {
-                    bone.rotation.z = angleRad;
-                    break;
-                }
-            }
-        }
-    });
-
-    // Handle server-side exercise change confirmation
-    socket.on('exercise_changed', (data) => {
-        const labels = { bicep_curl: 'Bicep Curl', squat: 'Squat', pushup: 'Push-Up' };
-        document.getElementById('exName').textContent = labels[data.exercise] || data.display_name;
-        document.getElementById('repCount').textContent = '0';
-        document.getElementById('angleVal').textContent = '—';
-    });
-
-    // ─── Resize Handler ───────────────────────────────────────────────────────
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // ─── Animation Loop ───────────────────────────────────────────────────────
-    const clock = new THREE.Clock();
-
-    function animate() {
-        requestAnimationFrame(animate);
-
-        const delta = clock.getDelta();
-
-        // Update animation mixers
-        for (const key in mixers) {
-            mixers[key].update(delta);
-        }
-
-        renderer.render(scene, camera);
+        ctx.beginPath();
+        ctx.arc(lm.x * W, lm.y * H, 2, 0, Math.PI * 2);
+        ctx.fillStyle  = '#00ff88';
+        ctx.shadowBlur = 0;
+        ctx.fill();
     }
+    ctx.shadowBlur = 0;
+}
 
-    animate();
+// ═══════════════════════════════════════════════════════════════════
+//  TRAINER VIDEO
+// ═══════════════════════════════════════════════════════════════════
+function loadTrainerVideo(exercise) {
+    trainerVideo.src = EXERCISE_VIDEOS[exercise] || EXERCISE_VIDEOS['bicep_curl'];
+    trainerVideo.load();
+    trainerVideo.play().catch(e => console.warn('Trainer video:', e));
+    trainerLabel.textContent = EXERCISE_LABELS[exercise] || exercise;
+}
+loadTrainerVideo('bicep_curl');
+
+// ═══════════════════════════════════════════════════════════════════
+//  SOCKET.IO
+// ═══════════════════════════════════════════════════════════════════
+const socket = io();
+
+socket.on('connect',    () => { detectBadge.textContent = '● Connected'; detectBadge.className = ''; });
+socket.on('disconnect', () => { detectBadge.textContent = '● Disconnected'; detectBadge.className = 'fail'; });
+
+socket.on('data_update', (data) => {
+    document.getElementById('repCount').textContent = data.reps;
+    document.getElementById('angleVal').textContent = data.angle;
+
+    const f = document.getElementById('feedback');
+    if (data.stage === 'down')      { f.textContent = '⬆ PUSH / PULL UP'; f.style.color = '#ffdd00'; }
+    else if (data.stage === 'up')   { f.textContent = '⬇ LOWER DOWN';     f.style.color = '#00ff88'; }
+    else                            { f.textContent = 'Get Ready!';        f.style.color = '#aaa';    }
+
+    detectBadge.textContent = data.detected ? '● POSE DETECTED' : '● No pose — step back & stand in frame';
+    detectBadge.className   = data.detected ? 'ok' : 'fail';
+
+    latestLandmarks = data.landmarks || [];
+});
+
+socket.on('exercise_changed', (data) => {
+    document.getElementById('exName').textContent   = EXERCISE_LABELS[data.exercise] || data.display_name;
+    document.getElementById('repCount').textContent = '0';
+    document.getElementById('angleVal').textContent = '—';
+    document.getElementById('feedback').textContent = 'Get Ready!';
+    document.getElementById('feedback').style.color = '#aaa';
+    latestLandmarks = [];
+    loadTrainerVideo(data.exercise);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  EXERCISE SELECTION
+// ═══════════════════════════════════════════════════════════════════
+function setEx(name) {
+    currentExercise = name;
+    socket.emit('set_exercise', { name });
+    exerciseNames.forEach(n => {
+        const btn = document.getElementById('btn-' + n);
+        if (btn) btn.classList.toggle('active', n === name);
+    });
+    document.getElementById('exName').textContent = EXERCISE_LABELS[name] || name;
+    loadTrainerVideo(name);
+}
 </script>
 </body>
 </html>
